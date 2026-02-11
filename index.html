@@ -5,36 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>CNL-Emoji表情制作器</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
             min-height: 100vh;
             padding: 20px;
-            overflow-x: hidden;
         }
-
-        .header {
-            text-align: center;
-            padding: 20px 0;
-        }
-
-        .header h1 {
-            color: #00d4ff;
-            font-size: 24px;
-            text-shadow: 0 0 20px rgba(0, 212, 255, 0.5);
-        }
-
-        .container {
-            max-width: 500px;
-            margin: 0 auto;
-        }
-
+        .header { text-align: center; padding: 20px 0; }
+        .header h1 { color: #00d4ff; font-size: 24px; text-shadow: 0 0 20px rgba(0, 212, 255, 0.5); }
+        .container { max-width: 500px; margin: 0 auto; }
         .card {
             background: rgba(255, 255, 255, 0.1);
             backdrop-filter: blur(10px);
@@ -43,492 +23,308 @@
             margin-bottom: 20px;
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
-
+        .card-title { color: #00d4ff; font-size: 16px; margin-bottom: 15px; display: flex; align-items: center; gap: 8px; }
         .upload-btn {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            background: rgba(255, 255, 255, 0.1);
-            color: white;
-            padding: 12px 20px;
-            border-radius: 25px;
-            cursor: pointer;
-            transition: all 0.3s;
-            border: none;
-            font-size: 16px;
+            display: flex; align-items: center; gap: 10px;
+            background: rgba(255, 255, 255, 0.1); color: white;
+            padding: 12px 20px; border-radius: 25px; cursor: pointer;
+            border: none; font-size: 16px;
         }
+        #fileInput { display: none; }
 
-        .upload-btn:hover {
-            background: rgba(255, 255, 255, 0.2);
+        /* 标签切换 */
+        .tabs { display: flex; gap: 10px; margin-bottom: 15px; }
+        .tab-btn {
+            flex: 1; padding: 12px; border: none; border-radius: 10px;
+            background: rgba(255, 255, 255, 0.1); color: rgba(255,255,255,0.6);
+            font-size: 14px; cursor: pointer; transition: all 0.3s;
         }
+        .tab-btn.active { background: #00d4ff; color: #1a1a2e; font-weight: bold; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
 
-        #fileInput {
-            display: none;
-        }
-
-        .crop-container {
-            position: relative;
-            width: 100%;
-            margin: 15px 0;
-            display: none;
-        }
-
-        .crop-wrapper {
-            position: relative;
-            display: inline-block;
-            max-width: 100%;
-        }
-
-        #cropImage {
-            max-width: 100%;
-            display: block;
-            user-select: none;
-            -webkit-user-drag: none;
-        }
-
+        /* 裁剪区域 */
+        .crop-wrapper { position: relative; display: inline-block; max-width: 100%; }
+        #cropImage { max-width: 100%; display: block; user-select: none; }
         .crop-box {
-            position: absolute;
-            border: 2px solid #fff;
+            position: absolute; border: 2px solid #fff;
             box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.6);
-            overflow: visible;
         }
-
-        /* 九宫格线 - 使用4个独立的div */
-        .grid-line {
-            position: absolute;
-            background: rgba(255, 255, 255, 0.5);
-            pointer-events: none;
-        }
+        .grid-line { position: absolute; background: rgba(255, 255, 255, 0.5); pointer-events: none; }
         .grid-line.h1 { left: 0; right: 0; top: 33.33%; height: 1px; }
         .grid-line.h2 { left: 0; right: 0; top: 66.66%; height: 1px; }
         .grid-line.v1 { top: 0; bottom: 0; left: 33.33%; width: 1px; }
         .grid-line.v2 { top: 0; bottom: 0; left: 66.66%; width: 1px; }
-
-        /* 裁剪框中心拖动区域 */
-        .crop-drag-area {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            cursor: move;
-        }
-
+        .crop-drag-area { position: absolute; top: 0; left: 0; right: 0; bottom: 0; cursor: move; }
         .crop-size {
-            position: absolute;
-            bottom: 8px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.7);
-            color: white;
-            padding: 4px 10px;
-            border-radius: 4px;
-            font-size: 12px;
-            white-space: nowrap;
-            z-index: 10;
-            pointer-events: none;
+            position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.7); color: white; padding: 4px 10px;
+            border-radius: 4px; font-size: 12px; pointer-events: none;
         }
-
         .crop-handle {
-            position: absolute;
-            width: 30px;
-            height: 30px;
-            background: #fff;
-            border-radius: 50%;
-            border: 3px solid #00d4ff;
-            z-index: 20;
+            position: absolute; width: 30px; height: 30px;
+            background: #fff; border-radius: 50%; border: 3px solid #00d4ff; z-index: 20;
         }
-
         .crop-handle.tl { top: -15px; left: -15px; cursor: nwse-resize; }
         .crop-handle.tr { top: -15px; right: -15px; cursor: nesw-resize; }
         .crop-handle.bl { bottom: -15px; left: -15px; cursor: nesw-resize; }
         .crop-handle.br { bottom: -15px; right: -15px; cursor: nwse-resize; }
 
-        .crop-actions {
-            position: absolute;
-            display: flex;
-            gap: 5px;
-            background: rgba(50, 50, 50, 0.95);
-            padding: 6px 8px;
-            border-radius: 6px;
-            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
-            z-index: 100;
-        }
-
-        .crop-actions button {
-            width: 36px;
-            height: 36px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 18px;
-            transition: all 0.2s;
-            background: transparent;
-            color: white;
-        }
-
-        .crop-actions button:active {
-            background: rgba(255, 255, 255, 0.2);
-        }
-
-        .crop-actions .btn-cancel { color: #ff6b6b; }
-        .crop-actions .btn-undo { color: #ffd93d; }
-        .crop-actions .btn-confirm { color: #6bcf63; }
-
-        .crop-actions button:disabled {
-            opacity: 0.3;
-            cursor: not-allowed;
-        }
-
-        .ratio-selector {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-            margin-bottom: 15px;
-            padding: 0 5px;
-        }
-
+        .ratio-selector { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 15px; }
         .ratio-btn {
-            padding: 8px 14px;
-            border: none;
-            background: rgba(255, 255, 255, 0.1);
-            color: white;
-            border-radius: 20px;
-            cursor: pointer;
-            transition: all 0.3s;
-            font-size: 14px;
+            padding: 8px 14px; border: none; background: rgba(255, 255, 255, 0.1);
+            color: white; border-radius: 20px; cursor: pointer; font-size: 14px;
         }
+        .ratio-btn.active { background: #00d4ff; color: #1a1a2e; }
 
-        .ratio-btn.active {
-            background: #00d4ff;
-            color: #1a1a2e;
+        /* 像素调整 */
+        .size-inputs { display: flex; gap: 15px; align-items: center; margin: 15px 0; }
+        .size-group { flex: 1; }
+        .size-group label { display: block; color: rgba(255,255,255,0.7); font-size: 12px; margin-bottom: 5px; }
+        .size-group input {
+            width: 100%; padding: 10px; border: 1px solid rgba(255,255,255,0.2);
+            background: rgba(255, 255, 255, 0.1); color: white; border-radius: 8px;
+            font-size: 16px; text-align: center;
         }
+        .link-btn {
+            width: 40px; height: 40px; border: none; background: rgba(255, 255, 255, 0.1);
+            color: white; border-radius: 50%; cursor: pointer; font-size: 18px; margin-top: 20px;
+        }
+        .link-btn.active { background: #00d4ff; color: #1a1a2e; }
+        .preset-sizes { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 15px; }
+        .preset-btn {
+            padding: 8px 12px; border: none; background: rgba(255, 255, 255, 0.1);
+            color: white; border-radius: 15px; cursor: pointer; font-size: 13px;
+        }
+        .preset-btn:active { background: rgba(255, 255, 255, 0.2); }
 
-        .preview-container {
-            display: none;
-            text-align: center;
+        /* 预览和保存 */
+        .preview-section { text-align: center; margin-top: 20px; }
+        .preview-label { color: rgba(255, 255, 255, 0.7); font-size: 14px; margin-bottom: 10px; }
+        #previewCanvas { max-width: 200px; max-height: 200px; border-radius: 10px; }
+        .action-btns { display: flex; gap: 10px; margin-top: 20px; }
+        .action-btn {
+            flex: 1; padding: 15px; border: none; border-radius: 25px;
+            font-size: 16px; font-weight: bold; cursor: pointer;
         }
+        .btn-apply { background: #00d4ff; color: #1a1a2e; }
+        .btn-save { background: linear-gradient(135deg, #6bcf63, #4a9f44); color: white; }
+        .btn-reset { background: rgba(255, 255, 255, 0.1); color: white; }
 
-        .preview-label {
-            color: rgba(255, 255, 255, 0.7);
-            font-size: 14px;
-            margin-bottom: 10px;
+        /* 保存弹窗 */
+        .save-modal {
+            display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.9); z-index: 1000; justify-content: center;
+            align-items: center; flex-direction: column; padding: 20px;
         }
+        .save-modal.show { display: flex; }
+        .save-modal img {
+            max-width: 90%; max-height: 60vh; border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+        }
+        .save-tips { color: white; text-align: center; margin-top: 20px; font-size: 14px; }
+        .save-tips p { margin: 8px 0; }
+        .save-btns { display: flex; gap: 15px; margin-top: 20px; }
+        .save-btns button {
+            padding: 12px 30px; border: none; border-radius: 25px; font-size: 16px; cursor: pointer;
+        }
+        .save-btns .btn-download { background: #00d4ff; color: #1a1a2e; }
+        .save-btns .btn-close { background: rgba(255, 255, 255, 0.2); color: white; }
 
-        #previewCanvas {
-            max-width: 200px;
-            max-height: 200px;
-            border-radius: 10px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-        }
-
-        .download-section {
-            display: none;
-            margin-top: 20px;
-        }
-
-        .download-btn {
-            width: 100%;
-            padding: 15px;
-            border: none;
-            background: linear-gradient(135deg, #00d4ff, #0099cc);
-            color: white;
-            border-radius: 25px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .download-btn:active {
-            transform: scale(0.98);
-        }
-
-        .history-info {
-            color: rgba(255, 255, 255, 0.5);
-            font-size: 12px;
-            text-align: center;
-            margin-top: 10px;
-        }
+        .hidden { display: none !important; }
     </style>
 </head>
 <body>
-    <div class="header">
-        <h1>CNL-Emoji表情制作器</h1>
-    </div>
+    <div class="header"><h1>CNL-Emoji表情制作器</h1></div>
 
     <div class="container">
         <div class="card">
             <label class="upload-btn">
-                <span>📁</span>
-                <span>选择图片</span>
+                <span>📁</span><span>选择图片</span>
                 <input type="file" id="fileInput" accept="image/*">
             </label>
+        </div>
 
-            <div class="crop-container" id="cropContainer">
+        <div class="card hidden" id="editCard">
+            <div class="tabs">
+                <button class="tab-btn active" data-tab="crop">✂️ 裁剪</button>
+                <button class="tab-btn" data-tab="resize">📐 调整像素</button>
+            </div>
+
+            <!-- 裁剪模式 -->
+            <div class="tab-content active" id="cropTab">
                 <div class="ratio-selector">
                     <button class="ratio-btn active" data-ratio="free">自由</button>
                     <button class="ratio-btn" data-ratio="1:1">1:1</button>
                     <button class="ratio-btn" data-ratio="4:3">4:3</button>
                     <button class="ratio-btn" data-ratio="3:4">3:4</button>
                     <button class="ratio-btn" data-ratio="16:9">16:9</button>
-                    <button class="ratio-btn" data-ratio="9:16">9:16</button>
                 </div>
-
                 <div class="crop-wrapper" id="cropWrapper">
-                    <img id="cropImage" src="" alt="裁剪图片">
+                    <img id="cropImage" src="">
                     <div class="crop-box" id="cropBox">
-                        <!-- 九宫格线 -->
                         <div class="grid-line h1"></div>
                         <div class="grid-line h2"></div>
                         <div class="grid-line v1"></div>
                         <div class="grid-line v2"></div>
-                        <!-- 拖动区域 -->
                         <div class="crop-drag-area" id="cropDragArea"></div>
-                        <!-- 控制点 -->
                         <div class="crop-handle tl" data-handle="tl"></div>
                         <div class="crop-handle tr" data-handle="tr"></div>
                         <div class="crop-handle bl" data-handle="bl"></div>
                         <div class="crop-handle br" data-handle="br"></div>
                         <div class="crop-size" id="cropSize">0 × 0</div>
                     </div>
+                </div>
+                <div class="action-btns">
+                    <button class="action-btn btn-reset" id="resetCropBtn">重置</button>
+                    <button class="action-btn btn-apply" id="applyCropBtn">应用裁剪</button>
+                </div>
+            </div>
 
-                    <div class="crop-actions" id="cropActions">
-                        <button class="btn-cancel" title="退出裁剪" id="cancelBtn">✕</button>
-                        <button class="btn-undo" id="undoBtn" title="撤销" disabled>↩</button>
-                        <button class="btn-confirm" title="确认裁剪" id="confirmBtn">✓</button>
+            <!-- 调整像素模式 -->
+            <div class="tab-content" id="resizeTab">
+                <div class="preview-section">
+                    <div class="preview-label">当前尺寸: <span id="currentSize">0 × 0</span></div>
+                    <canvas id="resizePreview"></canvas>
+                </div>
+                <div class="size-inputs">
+                    <div class="size-group">
+                        <label>宽度 (px)</label>
+                        <input type="number" id="widthInput" min="1" max="4096">
+                    </div>
+                    <button class="link-btn active" id="linkBtn" title="保持比例">🔗</button>
+                    <div class="size-group">
+                        <label>高度 (px)</label>
+                        <input type="number" id="heightInput" min="1" max="4096">
                     </div>
                 </div>
-
-                <div class="history-info" id="historyInfo"></div>
+                <div class="preset-sizes">
+                    <button class="preset-btn" data-size="64">64px</button>
+                    <button class="preset-btn" data-size="128">128px</button>
+                    <button class="preset-btn" data-size="256">256px</button>
+                    <button class="preset-btn" data-size="512">512px</button>
+                    <button class="preset-btn" data-size="1024">1024px</button>
+                    <button class="preset-btn" data-w="1080" data-h="1920">1080×1920</button>
+                    <button class="preset-btn" data-w="1920" data-h="1080">1920×1080</button>
+                </div>
+                <div class="action-btns">
+                    <button class="action-btn btn-reset" id="resetSizeBtn">还原</button>
+                    <button class="action-btn btn-apply" id="applySizeBtn">应用尺寸</button>
+                </div>
             </div>
         </div>
 
-        <div class="card preview-container" id="previewContainer">
-            <div class="preview-label">预览效果</div>
-            <canvas id="previewCanvas"></canvas>
+        <div class="card hidden" id="resultCard">
+            <div class="card-title">📷 最终效果</div>
+            <div class="preview-section">```html
+                <canvas id="finalCanvas"></canvas>
+                <div class="preview-label" id="finalSize">0 × 0</div>
+            </div>
+            <div class="action-btns">
+                <button class="action-btn btn-save" id="saveBtn">💾 保存图片</button>
+            </div>
         </div>
+    </div>
 
-        <div class="download-section" id="downloadSection">
-            <button class="download-btn" id="downloadBtn">💾 保存图片</button>
+    <!-- 保存弹窗 -->
+    <div class="save-modal" id="saveModal">
+        <img id="saveImage" src="">
+        <div class="save-tips">
+            <p>📱 手机用户：<strong>长按图片</strong> 保存到相册</p>
+            <p>💻 电脑用户：点击下载按钮</p>
+        </div>
+        <div class="save-btns">
+            <button class="btn-download" id="downloadBtn">⬇️ 下载</button>
+            <button class="btn-close" id="closeModal">关闭</button>
         </div>
     </div>
 
     <script>
-        let originalImage = null;
-        let currentImage = null;
+        let originalImage = null, currentImage = null;
         let cropBox = { x: 50, y: 50, width: 200, height: 200 };
-        let isDragging = false;
-        let isResizing = false;
-        let currentHandle = null;
-        let startX, startY, startBox;
-        let currentRatio = null;
-        let scale = 1;
+        let isDragging = false, isResizing = false, currentHandle = null;
+        let startX, startY, startBox, currentRatio = null, scale = 1;
+        let keepRatio = true, originalRatio = 1;
 
-        let history = [];
-        const maxHistory = 20;
-
-        const fileInput = document.getElementById('fileInput');
-        const cropContainer = document.getElementById('cropContainer');
-        const cropImage = document.getElementById('cropImage');
-        const cropBoxEl = document.getElementById('cropBox');
-        const cropDragArea = document.getElementById('cropDragArea');
-        const cropWrapper = document.getElementById('cropWrapper');
-        const cropActions = document.getElementById('cropActions');
-        const cropSizeEl = document.getElementById('cropSize');
-        const previewContainer = document.getElementById('previewContainer');
-        const previewCanvas = document.getElementById('previewCanvas');
-        const downloadSection = document.getElementById('downloadSection');
-        const undoBtn = document.getElementById('undoBtn');
-        const historyInfo = document.getElementById('historyInfo');
-        const cancelBtn = document.getElementById('cancelBtn');
-        const confirmBtn = document.getElementById('confirmBtn');
-        const downloadBtn = document.getElementById('downloadBtn');
+        const $ = id => document.getElementById(id);
+        const cropImage = $('cropImage'), cropBoxEl = $('cropBox'), cropWrapper = $('cropWrapper');
 
         // 文件选择
-        fileInput.addEventListener('change', (e) => {
+        $('fileInput').addEventListener('change', e => {
             const file = e.target.files[0];
             if (!file) return;
-
             const reader = new FileReader();
-            reader.onload = (event) => {
+            reader.onload = ev => {
                 const img = new Image();
-                img.onload = () => {
-                    originalImage = img;
-                    currentImage = img;
-                    history = [];
-                    showCropper(img);
-                };
-                img.src = event.target.result;
+                img.onload = () => { originalImage = img; currentImage = img; initEditor(); };
+                img.src = ev.target.result;
             };
             reader.readAsDataURL(file);
         });
 
-        function showCropper(img) {
-            cropImage.src = img.src;
-            cropContainer.style.display = 'block';
-            previewContainer.style.display = 'block';
-            downloadSection.style.display = 'block';
-
+        function initEditor() {
+            $('editCard').classList.remove('hidden');
+            $('resultCard').classList.remove('hidden');
+            cropImage.src = currentImage.src;
             setTimeout(() => {
-                scale = img.naturalWidth / cropImage.width;
-                const size = Math.min(cropImage.width, cropImage.height) * 0.7;
-                cropBox = {
-                    x: (cropImage.width - size) / 2,
-                    y: (cropImage.height - size) / 2,
-                    width: size,
-                    height: size
-                };
-                updateCropBox();
-                updatePreview();
-                updateHistoryInfo();
+                scale = currentImage.naturalWidth / cropImage.width;
+                originalRatio = currentImage.naturalWidth / currentImage.naturalHeight;
+                resetCropBox();
+                updateSizeInputs();
+                updateFinalPreview();
             }, 100);
         }
 
+        function resetCropBox() {
+            const size = Math.min(cropImage.width, cropImage.height) * 0.7;
+            cropBox = { x: (cropImage.width - size) / 2, y: (cropImage.height - size) / 2, width: size, height: size };
+            updateCropBox();
+        }
+
         function updateCropBox() {
-            cropBoxEl.style.left = cropBox.x + 'px';
-            cropBoxEl.style.top = cropBox.y + 'px';
-            cropBoxEl.style.width = cropBox.width + 'px';
-            cropBoxEl.style.height = cropBox.height + 'px';
-
-            const realWidth = Math.round(cropBox.width * scale);
-            const realHeight = Math.round(cropBox.height * scale);
-            cropSizeEl.textContent = `${realWidth} × ${realHeight}`;
-
-            updateActionsPosition();
+            cropBoxEl.style.cssText = `left:${cropBox.x}px;top:${cropBox.y}px;width:${cropBox.width}px;height:${cropBox.height}px`;
+            $('cropSize').textContent = `${Math.round(cropBox.width * scale)} × ${Math.round(cropBox.height * scale)}`;
         }
 
-        function updateActionsPosition() {
-            const boxRight = cropBox.x + cropBox.width;
-            const boxBottom = cropBox.y + cropBox.height;
-            const actionsWidth = cropActions.offsetWidth || 120;
-
-            let left = boxRight - actionsWidth;
-            let top = boxBottom + 10;
-
-            if (top + 50 > cropImage.height) top = boxBottom - 50;
-            if (left < 5) left = 5;
-
-            cropActions.style.left = left + 'px';
-            cropActions.style.top = top + 'px';
+        function updateSizeInputs() {
+            $('widthInput').value = currentImage.naturalWidth;
+            $('heightInput').value = currentImage.naturalHeight;
+            $('currentSize').textContent = `${currentImage.naturalWidth} × ${currentImage.naturalHeight}`;
         }
 
-        function saveToHistory() {
-            history.push({ imageSrc: currentImage.src, cropBox: { ...cropBox } });
-            if (history.length > maxHistory) history.shift();
-            updateHistoryInfo();
+        function updateFinalPreview() {
+            const canvas = $('finalCanvas'), ctx = canvas.getContext('2d');
+            const w = currentImage.naturalWidth, h = currentImage.naturalHeight;
+            const max = 200, pw = w > h ? max : (w / h) * max, ph = h > w ? max : (h / w) * max;
+            canvas.width = pw; canvas.height = ph;
+            ctx.drawImage(currentImage, 0, 0, w, h, 0, 0, pw, ph);
+            $('finalSize').textContent = `${w} × ${h}`;
         }
 
-        function updateHistoryInfo() {
-            undoBtn.disabled = history.length === 0;
-            historyInfo.textContent = history.length > 0 ? `可撤销 ${history.length} 步` : '';
-        }
-
-        // 撤销
-        undoBtn.addEventListener('click', () => {
-            if (history.length === 0) return;
-            const lastState = history.pop();
-            const img = new Image();
-            img.onload = () => {
-                currentImage = img;
-                cropImage.src = img.src;
-                cropBox = lastState.cropBox;
-                setTimeout(() => {
-                    scale = img.naturalWidth / cropImage.width;
-                    updateCropBox();
-                    updatePreview();
-                    updateHistoryInfo();
-                }, 50);
-            };
-            img.src = lastState.imageSrc;
-        });
-
-        // 退出裁剪
-        cancelBtn.addEventListener('click', () => {
-            cropContainer.style.display = 'none';
-            previewContainer.style.display = 'none';
-            downloadSection.style.display = 'none';
-            fileInput.value = '';
-        });
-
-        // 确认裁剪
-        confirmBtn.addEventListener('click', () => {
-            saveToHistory();
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            const sx = cropBox.x * scale, sy = cropBox.y * scale;
-            const sw = cropBox.width * scale, sh = cropBox.height * scale;
-
-            canvas.width = sw;
-            canvas.height = sh;
-            ctx.drawImage(currentImage, sx, sy, sw, sh, 0, 0, sw, sh);
-
-            const img = new Image();
-            img.onload = () => { currentImage = img; showCropper(img); };
-            img.src = canvas.toDataURL('image/png');
-        });
-
-        function updatePreview() {
-            const ctx = previewCanvas.getContext('2d');
-            const sx = cropBox.x * scale, sy = cropBox.y * scale;
-            const sw = cropBox.width * scale, sh = cropBox.height * scale;
-
-            const maxSize = 200;
-            let pw = sw > sh ? maxSize : (sw / sh) * maxSize;
-            let ph = sh > sw ? maxSize : (sh / sw) * maxSize;
-
-            previewCanvas.width = pw;
-            previewCanvas.height = ph;
-            ctx.drawImage(currentImage, sx, sy, sw, sh, 0, 0, pw, ph);
-        }
-
-        // 获取坐标（兼容触摸和鼠标）
+        // 拖动逻辑
         function getPos(e) {
             const rect = cropWrapper.getBoundingClientRect();
-            let clientX, clientY;
-            if (e.touches && e.touches[0]) {
-                clientX = e.touches[0].clientX;
-                clientY = e.touches[0].clientY;
-            } else {
-                clientX = e.clientX;
-                clientY = e.clientY;
-            }
-            return { x: clientX - rect.left, y: clientY - rect.top };
+            const t = e.touches?.[0] || e;
+            return { x: t.clientX - rect.left, y: t.clientY - rect.top };
         }
 
-        // 开始拖动/缩放
         function onStart(e) {
             e.preventDefault();
             const pos = getPos(e);
-            startX = pos.x;
-            startY = pos.y;
-            startBox = { ...cropBox };
-
-            if (e.target.classList.contains('crop-handle')) {
-                isResizing = true;
-                currentHandle = e.target.dataset.handle;
-            } else {
-                isDragging = true;
-            }
+            startX = pos.x; startY = pos.y; startBox = { ...cropBox };
+            isResizing = e.target.classList.contains('crop-handle');
+            if (isResizing) currentHandle = e.target.dataset.handle;
+            else isDragging = true;
         }
 
-        // 移动中
         function onMove(e) {
             if (!isDragging && !isResizing) return;
             e.preventDefault();
-
-            const pos = getPos(e);
-            const dx = pos.x - startX;
-            const dy = pos.y - startY;
-
+            const pos = getPos(e), dx = pos.x - startX, dy = pos.y - startY;
             if (isDragging) {
                 cropBox.x = Math.max(0, Math.min(startBox.x + dx, cropImage.width - cropBox.width));
                 cropBox.y = Math.max(0, Math.min(startBox.y + dy, cropImage.height - cropBox.height));
             }
-
             if (isResizing) {
                 let nb = { ...startBox };
                 if (currentHandle.includes('r')) nb.width = Math.max(50, startBox.width + dx);
@@ -536,79 +332,119 @@
                 if (currentHandle.includes('b')) nb.height = Math.max(50, startBox.height + dy);
                 if (currentHandle.includes('t')) { nb.y = startBox.y + dy; nb.height = Math.max(50, startBox.height - dy); }
                 if (currentRatio) nb.height = nb.width / currentRatio;
-
-                nb.x = Math.max(0, nb.x);
-                nb.y = Math.max(0, nb.y);
+                nb.x = Math.max(0, nb.x); nb.y = Math.max(0, nb.y);
                 nb.width = Math.min(nb.width, cropImage.width - nb.x);
                 nb.height = Math.min(nb.height, cropImage.height - nb.y);
                 cropBox = nb;
             }
-
             updateCropBox();
-            updatePreview();
         }
 
-        function onEnd() { isDragging = false; isResizing = false; currentHandle = null; }
+        function onEnd() { isDragging = false; isResizing = false; }
 
-        // 绑定事件 - 拖动区域
-        cropDragArea.addEventListener('mousedown', onStart);
-        cropDragArea.addEventListener('touchstart', onStart, { passive: false });
-
-        // 绑定事件 - 控制点
-        document.querySelectorAll('.crop-handle').forEach(handle => {
-            handle.addEventListener('mousedown', onStart);
-            handle.addEventListener('touchstart', onStart, { passive: false });
+        $('cropDragArea').addEventListener('mousedown', onStart);
+        $('cropDragArea').addEventListener('touchstart', onStart, { passive: false });
+        document.querySelectorAll('.crop-handle').forEach(h => {
+            h.addEventListener('mousedown', onStart);
+            h.addEventListener('touchstart', onStart, { passive: false });
         });
-
         document.addEventListener('mousemove', onMove);
         document.addEventListener('touchmove', onMove, { passive: false });
         document.addEventListener('mouseup', onEnd);
         document.addEventListener('touchend', onEnd);
+
+        // 标签切换
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                btn.classList.add('active');
+                $(btn.dataset.tab + 'Tab').classList.add('active');
+            });
+        });
 
         // 比例选择
         document.querySelectorAll('.ratio-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 document.querySelectorAll('.ratio-btn').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
-
-                const ratio = btn.dataset.ratio;
-                if (ratio === 'free') {
-                    currentRatio = null;
-                } else {
-                    const [w, h] = ratio.split(':').map(Number);
-                    currentRatio = w / h;
-                    cropBox.height = cropBox.width / currentRatio;
-                    if (cropBox.y + cropBox.height > cropImage.height) {
-                        cropBox.height = cropImage.height - cropBox.y;
-                        cropBox.width = cropBox.height * currentRatio;
-                    }
-                }
-                updateCropBox();
-                updatePreview();
+                const r = btn.dataset.ratio;
+                currentRatio = r === 'free' ? null : r.split(':').map(Number).reduce((a, b) => a / b);
+                if (currentRatio) { cropBox.height = cropBox.width / currentRatio; updateCropBox(); }
             });
         });
 
-        // 下载
-        downloadBtn.addEventListener('click', () => {
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
+        // 应用裁剪
+        $('applyCropBtn').addEventListener('click', () => {
+            const canvas = document.createElement('canvas'), ctx = canvas.getContext('2d');
             const sx = cropBox.x * scale, sy = cropBox.y * scale;
             const sw = cropBox.width * scale, sh = cropBox.height * scale;
-
-            canvas.width = sw;
-            canvas.height = sh;
+            canvas.width = sw; canvas.height = sh;
             ctx.drawImage(currentImage, sx, sy, sw, sh, 0, 0, sw, sh);
+            const img = new Image();
+            img.onload = () => { currentImage = img; initEditor(); };
+            img.src = canvas.toDataURL('image/png');
+        });
 
+        $('resetCropBtn').addEventListener('click', resetCropBox);
+
+        // 尺寸调整
+        $('linkBtn').addEventListener('click', () => {
+            keepRatio = !keepRatio;
+            $('linkBtn').classList.toggle('active', keepRatio);
+        });
+
+        $('widthInput').addEventListener('input', () => {
+            if (keepRatio) $('heightInput').value = Math.round($('widthInput').value / originalRatio);
+        });
+        $('heightInput').addEventListener('input', () => {
+            if (keepRatio) $('widthInput').value = Math.round($('heightInput').value * originalRatio);
+        });
+
+        document.querySelectorAll('.preset-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                if (btn.dataset.size) {
+                    const s = parseInt(btn.dataset.size);
+                    $('widthInput').value = s;
+                    $('heightInput').value = keepRatio ? Math.round(s / originalRatio) : s;
+                } else {
+                    $('widthInput').value = btn.dataset.w;
+                    $('heightInput').value = btn.dataset.h;
+                }
+            });
+        });
+
+        $('applySizeBtn').addEventListener('click', () => {
+            const w = parseInt($('widthInput').value), h = parseInt($('heightInput').value);
+            if (w < 1 || h < 1) return alert('请输入有效尺寸');
+            const canvas = document.createElement('canvas'), ctx = canvas.getContext('2d');
+            canvas.width = w; canvas.height = h;
+            ctx.drawImage(currentImage, 0, 0, currentImage.naturalWidth, currentImage.naturalHeight, 0, 0, w, h);
+            const img = new Image();
+            img.onload = () => { currentImage = img; initEditor(); };
+            img.src = canvas.toDataURL('image/png');
+        });
+
+        $('resetSizeBtn').addEventListener('click', () => { currentImage = originalImage; initEditor(); });
+
+        // 保存
+        $('saveBtn').addEventListener('click', () => {
+            const canvas = document.createElement('canvas'), ctx = canvas.getContext('2d');
+            canvas.width = currentImage.naturalWidth; canvas.height = currentImage.naturalHeight;
+            ctx.drawImage(currentImage, 0, 0);
+            $('saveImage').src = canvas.toDataURL('image/png');
+            $('saveModal').classList.add('show');
+        });
+
+        $('downloadBtn').addEventListener('click', () => {
             const link = document.createElement('a');
             link.download = 'CNL-emoji-' + Date.now() + '.png';
-            link.href = canvas.toDataURL('image/png');
+            link.href = $('saveImage').src;
             link.click();
         });
 
-        // Ctrl+Z 撤销
-        document.addEventListener('keydown', (e) => {
-            if (e.ctrlKey && e.key === 'z') { e.preventDefault(); undoBtn.click(); }
-        });
+        $('closeModal').addEventListener('click', () => $('saveModal').classList.remove('show'));
+        $('saveModal').addEventListener('click', e => { if (e.target === $('saveModal')) $('saveModal').classList.remove('show'); });
     </script>
 </body>
 </html>
